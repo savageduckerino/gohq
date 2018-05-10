@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"errors"
+	"net/url"
+	"github.com/gorilla/websocket"
 )
 
-func Verify(number string) (*Verification, error) {
+func HQVerify(number string) (*Verification, error) {
 	verification := Verification{}
 	verificationError := HQError{}
 
@@ -41,7 +43,7 @@ func Verify(number string) (*Verification, error) {
 
 	return &verification, nil
 }
-func Confirm(verification *Verification, code string) (*AuthInfo, error) {
+func HQConfirm(verification *Verification, code string) (*AuthInfo, error) {
 	authInfo := AuthInfo{}
 	authErr := HQError{}
 
@@ -76,7 +78,7 @@ func Confirm(verification *Verification, code string) (*AuthInfo, error) {
 
 	return &authInfo, nil
 }
-func Create(verification *Verification, username, referrer, region string) (*UserInfo, error) {
+func HQCreate(verification *Verification, username, referrer, region string) (*UserInfo, error) {
 	info := UserInfo{}
 	createError := HQError{}
 
@@ -107,4 +109,91 @@ func Create(verification *Verification, username, referrer, region string) (*Use
 	}
 
 	return &info, nil
+}
+func HQWeekly(info *UserInfo) (error) {
+	authErr := HQError{}
+
+	body := `{}`
+	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/easter-eggs/makeItRain", strings.NewReader(body))
+
+	req.Header.Add("x-hq-client", "Android/1.6.2")
+	req.Header.Add("authorization", "Bearer "+info.AccessToken)
+	req.Header.Add("content-type", "application/json; charset=UTF-8")
+	req.Header.Add("content-length", strconv.Itoa(len(body)))
+	req.Header.Add("user-agent", "okhttp/3.8.0")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	bytes, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	json.Unmarshal(bytes, &authErr)
+	if authErr.Error != "" {
+		return errors.New(authErr.Error)
+	} else {
+		return nil
+	}
+}
+
+func HQSchedule(bearer string) (*Schedule) {
+	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
+	req.Header.Set("authorization", bearer)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil
+	}
+
+	bytes, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	schedule := Schedule{}
+	json.Unmarshal(bytes, &schedule)
+
+	return &schedule
+}
+func HQConnect(id, bearer string) (HQSocket, error) {
+	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + id}
+
+	request := http.Header{}
+	request.Add("Authorization", bearer)
+
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), request)
+	return HQSocket{c}, err
+}
+
+func (ws HQSocket) SendSocketSubscribe(broadcastID string) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+broadcastID+`}`))
+}
+func (ws HQSocket) SendSocketAnswer(broadcastID string, questionID, answerID int) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
+}
+func (ws HQSocket) SendSocketExtraLife(broadcastID string, questionID int) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`}`))
+}
+
+func (ws HQSocket) Read() (string, error) {
+	_, message, err := ws.ReadMessage()
+	if err != nil {
+		return "", err
+	} else {
+		return string(message), nil
+	}
+}
+func (ws HQSocket) ReadQuestion() (*HQQuestion, error) {
+	_, message, err := ws.ReadMessage()
+	if err != nil {
+		return nil, err
+	} else {
+		question := HQQuestion{}
+		json.Unmarshal(message, &question)
+		if question.Question == "" {
+			return nil, nil
+		} else {
+			return &question, nil
+		}
+	}
 }

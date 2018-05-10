@@ -7,17 +7,17 @@ import (
 )
 
 func TestTrivia(t *testing.T) {
-	ver, err := Verify("+12135878823")
+	ver, err := HQVerify("+12134191735")
 
 	if err != nil {
 		log.Fatal("Error verifying number:", err)
 	}
 
-	var code = "1439"
+	var code = "8981"
 	/*fmt.Print("Enter the 4 digit code: ")
 	fmt.Scanln(&code)*/
 
-	auth, err := Confirm(ver, code)
+	auth, err := HQConfirm(ver, code)
 	if err != nil {
 		log.Fatal("Failed to confirm:", err)
 	} else {
@@ -28,10 +28,16 @@ func TestTrivia(t *testing.T) {
 		}
 	}
 
-	info, err := Create(ver, "randomuseme791", "Discoli", "GB")
+	info, err := HQCreate(ver, "randomuseme7191", "Discoli", "GB")
 	if err != nil {
 		log.Fatal("Failed to create account:", err)
 	}
 
 	fmt.Println("Signed up as ", info.Username, "with the id ", info.UserID)
+	fmt.Print("Applying free weekly life!")
+	if err = HQWeekly(info); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Print("Done!")
+	}
 }
