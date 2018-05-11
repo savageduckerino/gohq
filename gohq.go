@@ -171,8 +171,8 @@ func HQDebug() (*HQSocket, error) {
 	return &HQSocket{c}, err
 }
 
-func (ws *HQSocket) SendSocketSubscribe(broadcastID string) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+broadcastID+`}`))
+func (ws *HQSocket) SendSocketSubscribe(broadcastID int) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+strconv.Itoa(broadcastID)+`}`))
 }
 func (ws *HQSocket) SendSocketAnswer(broadcastID string, questionID, answerID int) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
@@ -181,53 +181,37 @@ func (ws *HQSocket) SendSocketExtraLife(broadcastID string, questionID int) erro
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`}`))
 }
 
-func (ws *HQSocket) Read() (string, error) {
-	_, message, err := ws.ReadMessage()
-	if err != nil {
-		return "", err
-	} else {
-		return string(message), nil
-	}
-}
-func (ws *HQSocket) ReadQuestion() (*HQQuestion, error) {
+func (ws *HQSocket) Read() ([]byte, error) {
 	_, message, err := ws.ReadMessage()
 	if err != nil {
 		return nil, err
 	} else {
-		question := HQQuestion{}
-		json.Unmarshal(message, &question)
-		if question.Question == "" {
-			return nil, nil
-		} else {
-			return &question, nil
-		}
+		return message, nil
 	}
 }
-func (ws *HQSocket) ReadStats() (*HQStats, error) {
-	_, message, err := ws.ReadMessage()
-	if err != nil {
-		return nil, err
-	} else {
-		stats := HQStats{}
-		json.Unmarshal(message, &stats)
-		if stats.ViewerCounts.Playing == 0 {
-			return nil, nil
-		} else {
-			return &stats, nil
-		}
+func (ws *HQSocket) ParseQuestion(message []byte) (*HQQuestion) {
+	var question *HQQuestion
+	json.Unmarshal(message, &question)
+	if question != nil && question.Question != "" {
+		return question
 	}
+	return nil
 }
-func (ws *HQSocket) ReadQuestionSummary() (*HQQuestionSummary, error) {
-	_, message, err := ws.ReadMessage()
-	if err != nil {
-		return nil, err
-	} else {
-		summary := HQQuestionSummary{}
-		json.Unmarshal(message, &summary)
-		if summary.Question != "" {
-			return nil, nil
-		} else {
-			return &summary, nil
-		}
+func (ws *HQSocket) ParseStats(message []byte) (*HQStats) {
+	var stats *HQStats
+	json.Unmarshal(message, &stats)
+	if stats != nil && stats.ViewerCounts.Playing != 0 {
+		return stats
 	}
+
+	return nil
+}
+func (ws *HQSocket) ParseQuestionSummary(message []byte) (*HQQuestionSummary) {
+	var summary *HQQuestionSummary
+	json.Unmarshal(message, &summary)
+	if summary != nil && summary.QuestionID != 0 {
+		return summary
+	}
+
+	return nil
 }
