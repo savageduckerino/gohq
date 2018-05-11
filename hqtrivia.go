@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func HQVerify(number string) (*Verification, error) {
-	verification := Verification{}
+func HQVerify(number string) (*HQVerification, error) {
+	verification := HQVerification{}
 	verificationError := HQError{}
 
 	body := `{"method":"sms","phone":"` + number + `"}`
@@ -43,8 +43,8 @@ func HQVerify(number string) (*Verification, error) {
 
 	return &verification, nil
 }
-func HQConfirm(verification *Verification, code string) (*AuthInfo, error) {
-	authInfo := AuthInfo{}
+func HQConfirm(verification *HQVerification, code string) (*HQAuth, error) {
+	authInfo := HQAuth{}
 	authErr := HQError{}
 
 	body := `{"code":"` + code + `"}`
@@ -69,7 +69,7 @@ func HQConfirm(verification *Verification, code string) (*AuthInfo, error) {
 		if authErr.Error != "" {
 			return nil, errors.New(authErr.Error)
 		} else {
-			if authInfo.Auth == (UserInfo{}) {
+			if authInfo.Auth == (HQInfo{}) {
 				return nil, nil
 			}
 			return nil, errors.New("unknown error")
@@ -78,8 +78,8 @@ func HQConfirm(verification *Verification, code string) (*AuthInfo, error) {
 
 	return &authInfo, nil
 }
-func HQCreate(verification *Verification, username, referrer, region string) (*UserInfo, error) {
-	info := UserInfo{}
+func HQCreate(verification *HQVerification, username, referrer, region string) (*HQInfo, error) {
+	info := HQInfo{}
 	createError := HQError{}
 
 	body := `{"country":"` + region + `","language":"en","referringUsername":"` + referrer + `","username":"` + username + `","verificationId":"` + verification.VerificationID + `"}`
@@ -110,7 +110,7 @@ func HQCreate(verification *Verification, username, referrer, region string) (*U
 
 	return &info, nil
 }
-func HQWeekly(info *UserInfo) (error) {
+func HQWeekly(info *HQInfo) (error) {
 	authErr := HQError{}
 
 	body := `{}`
@@ -138,7 +138,7 @@ func HQWeekly(info *UserInfo) (error) {
 	}
 }
 
-func HQSchedule(bearer string) (*Schedule) {
+func Schedule(bearer string) (*HQSchedule) {
 	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
 	req.Header.Set("authorization", bearer)
 
@@ -150,32 +150,32 @@ func HQSchedule(bearer string) (*Schedule) {
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 
-	schedule := Schedule{}
+	schedule := HQSchedule{}
 	json.Unmarshal(bytes, &schedule)
 
 	return &schedule
 }
-func HQConnect(id, bearer string) (HQSocket, error) {
+func HQConnect(id, bearer string) (*HQSocket, error) {
 	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + id}
 
 	request := http.Header{}
 	request.Add("Authorization", bearer)
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), request)
-	return HQSocket{c}, err
+	return &HQSocket{c}, err
 }
 
-func (ws HQSocket) SendSocketSubscribe(broadcastID string) error {
+func (ws *HQSocket) SendSocketSubscribe(broadcastID string) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+broadcastID+`}`))
 }
-func (ws HQSocket) SendSocketAnswer(broadcastID string, questionID, answerID int) error {
+func (ws *HQSocket) SendSocketAnswer(broadcastID string, questionID, answerID int) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
 }
-func (ws HQSocket) SendSocketExtraLife(broadcastID string, questionID int) error {
+func (ws *HQSocket) SendSocketExtraLife(broadcastID string, questionID int) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`}`))
 }
 
-func (ws HQSocket) Read() (string, error) {
+func (ws *HQSocket) Read() (string, error) {
 	_, message, err := ws.ReadMessage()
 	if err != nil {
 		return "", err
@@ -183,7 +183,7 @@ func (ws HQSocket) Read() (string, error) {
 		return string(message), nil
 	}
 }
-func (ws HQSocket) ReadQuestion() (*HQQuestion, error) {
+func (ws *HQSocket) ReadQuestion() (*HQQuestion, error) {
 	_, message, err := ws.ReadMessage()
 	if err != nil {
 		return nil, err

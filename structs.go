@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type UserInfo struct {
+type HQInfo struct {
 	UserID      int    `json:"userId"`
 	Username    string `json:"username"`
 	Admin       bool   `json:"admin"`
@@ -16,11 +16,11 @@ type UserInfo struct {
 	AccessToken string `json:"accessToken"`
 	AuthToken   string `json:"authToken"`
 }
-type AuthInfo struct {
-	Auth UserInfo `json:"auth"`
+type HQAuth struct {
+	Auth HQInfo `json:"auth"`
 }
 
-type Verification struct {
+type HQVerification struct {
 	CallsEnabled   bool      `json:"callsEnabled"`
 	Expires        time.Time `json:"expires"`
 	Phone          string    `json:"phone"`
@@ -33,7 +33,7 @@ type HQError struct {
 	ErrorCode int    `json:"errorCode"`
 }
 
-type Schedule struct {
+type HQSchedule struct {
 	Active        bool        `json:"active"`
 	AtCapacity    bool        `json:"atCapacity"`
 	ShowID        int         `json:"showId"`
