@@ -1,4 +1,4 @@
-package go_hqtrivia
+package gohq
 
 import (
 	"net/http"
@@ -138,13 +138,13 @@ func HQWeekly(info *HQInfo) (error) {
 	}
 }
 
-func Schedule(bearer string) (*HQSchedule) {
+func Schedule(bearer string) (HQSchedule) {
 	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
 	req.Header.Set("authorization", bearer)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil
+		return HQSchedule{}
 	}
 
 	bytes, _ := ioutil.ReadAll(resp.Body)
@@ -153,7 +153,7 @@ func Schedule(bearer string) (*HQSchedule) {
 	schedule := HQSchedule{}
 	json.Unmarshal(bytes, &schedule)
 
-	return &schedule
+	return schedule
 }
 func HQConnect(id, bearer string) (*HQSocket, error) {
 	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + id}

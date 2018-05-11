@@ -7,9 +7,9 @@
     featuring a fully featured api for accessing and interacting with the <a href="https://hq.hype.space/legal/rules.html">HQ</a> API.
     <br>
     <br>
-    <a href="https://github.com/discoli/go-hqtrivia/issues/new">Report a Bug</a>
+    <a href="https://github.com/discoli/gohq/issues/new">Report a Bug</a>
     ·
-    <a href="https://github.com/discoli/go-hqtrivia/pulls">Contribute</a>
+    <a href="https://github.com/discoli/gohq/pulls">Contribute</a>
   </p>
 </p>
 
@@ -17,4 +17,4 @@
 
 ## Usage
 
-No actual documentation yet, but you can check out the examples I've provided [here](https://github.com/discoli/gobonkers/blob/master/go-hqtrivia.go)!
+No actual documentation yet, but you can check out the examples I've provided [here](https://github.com/discoli/gohq/blob/master/gohq_test.go)!

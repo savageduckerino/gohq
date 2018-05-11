@@ -1,4 +1,4 @@
-package go_hqtrivia
+package gohq
 
 import (
 	"testing"
