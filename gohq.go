@@ -164,6 +164,12 @@ func HQConnect(id, bearer string) (*HQSocket, error) {
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), request)
 	return &HQSocket{c}, err
 }
+func HQDebug() (*HQSocket, error) {
+	var u = url.URL{Scheme: "wss", Host: "hqecho.herokuapp.com"}
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+
+	return &HQSocket{c}, err
+}
 
 func (ws *HQSocket) SendSocketSubscribe(broadcastID string) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+broadcastID+`}`))
@@ -194,6 +200,34 @@ func (ws *HQSocket) ReadQuestion() (*HQQuestion, error) {
 			return nil, nil
 		} else {
 			return &question, nil
+		}
+	}
+}
+func (ws *HQSocket) ReadStats() (*HQStats, error) {
+	_, message, err := ws.ReadMessage()
+	if err != nil {
+		return nil, err
+	} else {
+		stats := HQStats{}
+		json.Unmarshal(message, &stats)
+		if stats.ViewerCounts.Playing == 0 {
+			return nil, nil
+		} else {
+			return &stats, nil
+		}
+	}
+}
+func (ws *HQSocket) ReadQuestionSummary() (*HQQuestionSummary, error) {
+	_, message, err := ws.ReadMessage()
+	if err != nil {
+		return nil, err
+	} else {
+		summary := HQQuestionSummary{}
+		json.Unmarshal(message, &summary)
+		if summary.Question != "" {
+			return nil, nil
+		} else {
+			return &summary, nil
 		}
 	}
 }

@@ -100,3 +100,37 @@ type HQQuestion struct {
 	Ts             time.Time `json:"ts"`
 	Sent           time.Time `json:"sent"`
 }
+
+type HQStats struct {
+	Type          string `json:"type"`
+	LikeCount     int    `json:"likeCount"`
+	StatusMessage string `json:"statusMessage"`
+	ViewerCounts  struct {
+		Connected int `json:"connected"`
+		Playing   int `json:"playing"`
+		Watching  int `json:"watching"`
+	} `json:"viewerCounts"`
+	BroadcastSubscribers []interface{} `json:"broadcastSubscribers"`
+	Ts                   time.Time     `json:"ts"`
+	Sent                 time.Time     `json:"sent"`
+}
+
+type HQQuestionSummary struct {
+	Type         string `json:"type"`
+	QuestionID   int    `json:"questionId"`
+	Question     string `json:"question"`
+	AnswerCounts []struct {
+		AnswerID int    `json:"answerId"`
+		Text     string `json:"text"`
+		Count    int    `json:"count"`
+		Correct  bool   `json:"correct"`
+	} `json:"answerCounts"`
+	AdvancingPlayersCount  int       `json:"advancingPlayersCount"`
+	EliminatedPlayersCount int       `json:"eliminatedPlayersCount"`
+	YouGotItRight          bool      `json:"youGotItRight"`
+	YourAnswerID           int       `json:"yourAnswerId"`
+	SavedByExtraLife       bool      `json:"savedByExtraLife"`
+	ExtraLivesRemaining    int       `json:"extraLivesRemaining"`
+	Ts                     time.Time `json:"ts"`
+	Sent                   time.Time `json:"sent"`
+}
