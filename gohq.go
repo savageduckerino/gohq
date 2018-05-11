@@ -192,7 +192,7 @@ func (ws *HQSocket) Read() ([]byte, error) {
 func (ws *HQSocket) ParseQuestion(message []byte) (*HQQuestion) {
 	var question *HQQuestion
 	json.Unmarshal(message, &question)
-	if question != nil && question.Question != "" {
+	if question != nil && len(question.Answers) != 0 {
 		return question
 	}
 	return nil
