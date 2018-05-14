@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net/url"
 	"github.com/gorilla/websocket"
+	"fmt"
 )
 
 func HQVerify(number string) (*HQVerification, error) {
@@ -181,8 +182,17 @@ func (ws *HQSocket) SendSocketExtraLife(broadcastID string, questionID int) erro
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`}`))
 }
 
-func (ws *HQSocket) Read() ([]byte, error) {
-	_, message, err := ws.ReadMessage()
+func (ws *HQSocket) Read() (message []byte, err error) {
+	_, message, err = ws.ReadMessage()
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from a crash, fix this lazy boi")
+			message = nil
+			err = errors.New("panic")
+		}
+	}()
+
 	if err != nil {
 		return nil, err
 	} else {
