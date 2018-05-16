@@ -175,11 +175,11 @@ func HQDebug() (*HQSocket, error) {
 func (ws *HQSocket) SendSocketSubscribe(broadcastID int) error {
 	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+strconv.Itoa(broadcastID)+`}`))
 }
-func (ws *HQSocket) SendSocketAnswer(broadcastID string, questionID, answerID int) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
+func (ws *HQSocket) SendSocketAnswer(broadcastID, questionID, answerID int) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
 }
-func (ws *HQSocket) SendSocketExtraLife(broadcastID string, questionID int) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+broadcastID+`,"questionId":`+strconv.Itoa(questionID)+`}`))
+func (ws *HQSocket) SendSocketExtraLife(broadcastID, questionID int) error {
+	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`}`))
 }
 
 func (ws *HQSocket) Read() (message []byte, err error) {
