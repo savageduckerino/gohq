@@ -156,8 +156,8 @@ func Schedule(bearer string) (HQSchedule) {
 
 	return schedule
 }
-func HQConnect(id, bearer string) (*HQSocket, error) {
-	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + id}
+func HQConnect(id int, bearer string) (*HQSocket, error) {
+	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + strconv.Itoa(id)}
 
 	request := http.Header{}
 	request.Add("Authorization", bearer)
