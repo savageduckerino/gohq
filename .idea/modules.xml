@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/go-hqtrivia.iml" filepath="$PROJECT_DIR$/.idea/go-hqtrivia.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/gohq.iml" filepath="$PROJECT_DIR$/.idea/gohq.iml" />
     </modules>
   </component>
 </project>
