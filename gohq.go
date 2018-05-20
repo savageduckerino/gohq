@@ -28,7 +28,8 @@ func HQVerify(number string, transport *http.Transport) (*HQVerification, error)
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{Transport:transport}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,8 @@ func HQConfirm(verification *HQVerification, code string, transport *http.Transp
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{Transport:transport}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +105,8 @@ func HQCreate(verification *HQVerification, username, referrer, region string, t
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{Transport:transport}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +142,8 @@ func HQWeekly(info *HQInfo, transport *http.Transport) (error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{Transport:transport}
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -163,7 +167,8 @@ func Schedule(bearer string, transport *http.Transport) (HQSchedule) {
 	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
 	req.Header.Set("authorization", bearer)
 
-	resp, err := http.DefaultClient.Do(req)
+	client := http.Client{Transport:transport}
+	resp, err := client.Do(req)
 	if err != nil {
 		return HQSchedule{}
 	}
