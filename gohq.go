@@ -12,7 +12,11 @@ import (
 	"fmt"
 )
 
-func HQVerify(number string) (*HQVerification, error) {
+func HQVerify(number string, transport *http.Transport) (*HQVerification, error) {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+
 	verification := HQVerification{}
 	verificationError := HQError{}
 
@@ -44,7 +48,11 @@ func HQVerify(number string) (*HQVerification, error) {
 
 	return &verification, nil
 }
-func HQConfirm(verification *HQVerification, code string) (*HQAuth, error) {
+func HQConfirm(verification *HQVerification, code string, transport *http.Transport) (*HQAuth, error) {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+
 	authInfo := HQAuth{}
 	authErr := HQError{}
 
@@ -79,7 +87,11 @@ func HQConfirm(verification *HQVerification, code string) (*HQAuth, error) {
 
 	return &authInfo, nil
 }
-func HQCreate(verification *HQVerification, username, referrer, region string) (*HQInfo, error) {
+func HQCreate(verification *HQVerification, username, referrer, region string, transport *http.Transport) (*HQInfo, error) {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+
 	info := HQInfo{}
 	createError := HQError{}
 
@@ -111,7 +123,11 @@ func HQCreate(verification *HQVerification, username, referrer, region string) (
 
 	return &info, nil
 }
-func HQWeekly(info *HQInfo) (error) {
+func HQWeekly(info *HQInfo, transport *http.Transport) (error) {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+
 	authErr := HQError{}
 
 	body := `{}`
@@ -139,7 +155,11 @@ func HQWeekly(info *HQInfo) (error) {
 	}
 }
 
-func Schedule(bearer string) (HQSchedule) {
+func Schedule(bearer string, transport *http.Transport) (HQSchedule) {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+
 	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
 	req.Header.Set("authorization", bearer)
 
@@ -156,19 +176,27 @@ func Schedule(bearer string) (HQSchedule) {
 
 	return schedule
 }
-func HQConnect(id int, bearer string) (*HQSocket, error) {
+func HQConnect(id int, bearer string, dialer *websocket.Dialer) (*HQSocket, error) {
+	if dialer == nil {
+		dialer = websocket.DefaultDialer
+	}
 	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + strconv.Itoa(id)}
 
 	request := http.Header{}
 	request.Add("Authorization", bearer)
 
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), request)
+	c, _, err := dialer.Dial(u.String(), request)
 	return &HQSocket{c}, err
 }
-func HQDebug() (*HQSocket, error) {
-	var u = url.URL{Scheme: "wss", Host: "hqecho.herokuapp.com"}
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 
+func HQDebug(dialer *websocket.Dialer) (*HQSocket, error) {
+	if dialer == nil {
+		dialer = websocket.DefaultDialer
+	}
+
+	var u = url.URL{Scheme: "wss", Host: "hqecho.herokuapp.com"}
+
+	c, _, err := dialer.Dial(u.String(), nil)
 	return &HQSocket{c}, err
 }
 
