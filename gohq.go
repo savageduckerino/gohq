@@ -30,12 +30,12 @@ func HQVerify(number string) (*HQVerification, error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := http.Transport{}
+	t := &http.Transport{}
 	if os.Getenv("HQPROXY") != "" {
 		url, _ := url.Parse(os.Getenv("HQPROXY"))
 		t.Proxy = http.ProxyURL(url)
 	}
-	res, err := http.Client{Transport: &t}.Do(req)
+	res, err := http.Client{Transport: t}.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,12 @@ func HQConfirm(verification *HQVerification, code string) (*HQAuth, error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := http.Transport{}
+	t := &http.Transport{}
 	if os.Getenv("HQPROXY") != "" {
 		url, _ := url.Parse(os.Getenv("HQPROXY"))
 		t.Proxy = http.ProxyURL(url)
 	}
-	res, err := http.Client{Transport: &t}.Do(req)
+	res, err := http.Client{Transport: t}.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +107,12 @@ func HQCreate(verification *HQVerification, username, referrer, region string) (
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := http.Transport{}
+	t := &http.Transport{}
 	if os.Getenv("HQPROXY") != "" {
 		url, _ := url.Parse(os.Getenv("HQPROXY"))
 		t.Proxy = http.ProxyURL(url)
 	}
-	res, err := http.Client{Transport: &t}.Do(req)
+	res, err := http.Client{Transport: t}.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +144,12 @@ func HQWeekly(info *HQInfo) (error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := http.Transport{}
+	t := &http.Transport{}
 	if os.Getenv("HQPROXY") != "" {
 		url, _ := url.Parse(os.Getenv("HQPROXY"))
 		t.Proxy = http.ProxyURL(url)
 	}
-	res, err := http.Client{Transport: &t}.Do(req)
+	res, err := http.Client{Transport: t}.Do(req)
 	if err != nil {
 		return err
 	}
