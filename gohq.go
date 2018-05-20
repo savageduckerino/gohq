@@ -221,7 +221,7 @@ func (ws *HQSocket) ParseQuestionSummary(message []byte) (*HQQuestionSummary) {
 	json.Unmarshal(message, &summary)
 	if summary != nil && summary.QuestionID != 0 {
 		return summary
-	}
+	} 
 
 	return nil
 }
