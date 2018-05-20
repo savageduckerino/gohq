@@ -10,13 +10,7 @@ import (
 	"net/url"
 	"github.com/gorilla/websocket"
 	"fmt"
-	"os"
-	"golang.org/x/net/proxy"
 )
-
-func SetProxy(url string) {
-	os.Setenv("HQPROXY", url)
-}
 
 func HQVerify(number string) (*HQVerification, error) {
 	verification := HQVerification{}
@@ -30,12 +24,7 @@ func HQVerify(number string) (*HQVerification, error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := &http.Transport{}
-	if os.Getenv("HQPROXY") != "" {
-		url, _ := url.Parse(os.Getenv("HQPROXY"))
-		t.Proxy = http.ProxyURL(url)
-	}
-	res, err := http.Client{Transport: t}.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +56,7 @@ func HQConfirm(verification *HQVerification, code string) (*HQAuth, error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := &http.Transport{}
-	if os.Getenv("HQPROXY") != "" {
-		url, _ := url.Parse(os.Getenv("HQPROXY"))
-		t.Proxy = http.ProxyURL(url)
-	}
-	res, err := http.Client{Transport: t}.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +91,7 @@ func HQCreate(verification *HQVerification, username, referrer, region string) (
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := &http.Transport{}
-	if os.Getenv("HQPROXY") != "" {
-		url, _ := url.Parse(os.Getenv("HQPROXY"))
-		t.Proxy = http.ProxyURL(url)
-	}
-	res, err := http.Client{Transport: t}.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +123,7 @@ func HQWeekly(info *HQInfo) (error) {
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	t := &http.Transport{}
-	if os.Getenv("HQPROXY") != "" {
-		url, _ := url.Parse(os.Getenv("HQPROXY"))
-		t.Proxy = http.ProxyURL(url)
-	}
-	res, err := http.Client{Transport: t}.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -187,30 +161,14 @@ func HQConnect(id int, bearer string) (*HQSocket, error) {
 
 	request := http.Header{}
 	request.Add("Authorization", bearer)
-	var dialer *websocket.Dialer
 
-	if os.Getenv("HQPROXY") != "" {
-		netDialer, _ := proxy.SOCKS5("tcp", os.Getenv("HQPROXY"), nil, proxy.Direct)
-		dialer = &websocket.Dialer{NetDial: netDialer.Dial}
-	} else {
-		dialer = websocket.DefaultDialer
-	}
-
-	c, _, err := dialer.Dial(u.String(), request)
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), request)
 	return &HQSocket{c}, err
 }
 func HQDebug() (*HQSocket, error) {
 	var u = url.URL{Scheme: "wss", Host: "hqecho.herokuapp.com"}
-	var dialer *websocket.Dialer
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 
-	if os.Getenv("HQPROXY") != "" {
-		netDialer, _ := proxy.SOCKS5("tcp", os.Getenv("HQPROXY"), nil, proxy.Direct)
-		dialer = &websocket.Dialer{NetDial: netDialer.Dial}
-	} else {
-		dialer = websocket.DefaultDialer
-	}
-
-	c, _, err := dialer.Dial(u.String(), nil)
 	return &HQSocket{c}, err
 }
 
@@ -263,7 +221,7 @@ func (ws *HQSocket) ParseQuestionSummary(message []byte) (*HQQuestionSummary) {
 	json.Unmarshal(message, &summary)
 	if summary != nil && summary.QuestionID != 0 {
 		return summary
-	} 
+	}
 
 	return nil
 }
