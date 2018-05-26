@@ -1,36 +1,25 @@
 package gohq
 
 import (
-	"net/http"
-	"strings"
 	"strconv"
-	"io/ioutil"
-	"encoding/json"
-	"errors"
-	"net/url"
+	"net/http"
 	"github.com/gorilla/websocket"
-	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"errors"
+	"strings"
 	"time"
 )
 
-func HQVerify(number string, transport *http.Transport) (*HQVerification, error) {
-	if transport == nil {
-		transport = &http.Transport{}
-	}
-
-	verification := HQVerification{}
-	verificationError := HQError{}
-
+func Verify(number string) (*Verification, error) {
 	body := `{"method":"sms","phone":"` + number + `"}`
 	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/verifications", strings.NewReader(body))
-
 	req.Header.Add("x-hq-client", "Android/1.6.2")
 	req.Header.Add("content-type", "application/json; charset=UTF-8")
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	client := http.Client{Transport:transport, Timeout:time.Second * 10}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -38,36 +27,28 @@ func HQVerify(number string, transport *http.Transport) (*HQVerification, error)
 	bytes, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 
-	json.Unmarshal(bytes, &verification)
-	if verification.VerificationID == "" {
-		json.Unmarshal(bytes, &verificationError)
-		if verificationError.Error != "" {
-			return nil, errors.New(verificationError.Error)
+	var verification Verification
+
+	if json.Unmarshal(bytes, &verification); verification.VerificationID == "" {
+		var hqError HQError
+		if json.Unmarshal(bytes, &hqError); hqError.Error != "" {
+			return nil, errors.New(hqError.Error)
 		} else {
-			return nil, errors.New("unknown error")
+			return nil, errors.New("unknown error: " + string(bytes))
 		}
+	} else {
+		return &verification, nil
 	}
-
-	return &verification, nil
 }
-func HQConfirm(verification *HQVerification, code string, transport *http.Transport) (*HQAuth, error) {
-	if transport == nil {
-		transport = &http.Transport{}
-	}
-
-	authInfo := HQAuth{}
-	authErr := HQError{}
-
+func (verification *Verification) Confirm(code string) (*Auth, error) {
 	body := `{"code":"` + code + `"}`
 	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/verifications/"+verification.VerificationID, strings.NewReader(body))
-
 	req.Header.Add("x-hq-client", "Android/1.6.2")
 	req.Header.Add("content-type", "application/json; charset=UTF-8")
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	client := http.Client{Transport:transport, Timeout:time.Second * 10}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -75,28 +56,26 @@ func HQConfirm(verification *HQVerification, code string, transport *http.Transp
 	bytes, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 
-	json.Unmarshal(bytes, &authInfo)
-	if authInfo.Auth.AccessToken == "" {
-		json.Unmarshal(bytes, &authErr)
-		if authErr.Error != "" {
-			return nil, errors.New(authErr.Error)
+	var auth Auth
+	var hqError HQError
+
+	if json.Unmarshal(bytes, &auth); auth.Auth.AccessToken == "" {
+		if json.Unmarshal(bytes, &hqError); hqError.Error != "" {
+			return nil, errors.New(hqError.Error)
 		} else {
-			if authInfo.Auth == (HQInfo{}) {
+			if auth.Auth == (Account{}) {
 				return nil, nil
 			}
-			return nil, errors.New("unknown error")
+			return nil, errors.New("unknown error: " + string(bytes))
 		}
 	}
 
-	return &authInfo, nil
+	return &auth, nil
 }
-func HQCreate(verification *HQVerification, username, referrer, region string, transport *http.Transport) (*HQInfo, error) {
+func (verification *Verification) HQCreate(username, referrer, region string, transport *http.Transport) (*Account, error) {
 	if transport == nil {
 		transport = &http.Transport{}
 	}
-
-	info := HQInfo{}
-	createError := HQError{}
 
 	body := `{"country":"` + region + `","language":"en","referringUsername":"` + referrer + `","username":"` + username + `","verificationId":"` + verification.VerificationID + `"}`
 	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/users", strings.NewReader(body))
@@ -106,7 +85,7 @@ func HQCreate(verification *HQVerification, username, referrer, region string, t
 	req.Header.Add("content-length", strconv.Itoa(len(body)))
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	client := http.Client{Transport:transport, Timeout:time.Second * 10}
+	client := http.Client{Transport: transport, Timeout: time.Second * 10}
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -115,36 +94,28 @@ func HQCreate(verification *HQVerification, username, referrer, region string, t
 	bytes, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 
-	json.Unmarshal(bytes, &info)
-	if info.AccessToken == "" {
-		json.Unmarshal(bytes, &createError)
-		if createError.Error != "" {
-			return nil, errors.New(createError.Error)
+	var account Account
+	var hqError HQError
+
+	if json.Unmarshal(bytes, &account); account.AccessToken == "" {
+		if json.Unmarshal(bytes, &hqError); hqError.Error != "" {
+			return nil, errors.New(hqError.Error)
 		} else {
-			return nil, errors.New("unknown error")
+			return nil, errors.New("unknown error: " + string(bytes))
 		}
 	}
 
-	return &info, nil
+	return &account, nil
 }
-func HQWeekly(info *HQInfo, transport *http.Transport) (error) {
-	if transport == nil {
-		transport = &http.Transport{}
-	}
-
-	authErr := HQError{}
-
-	body := `{}`
-	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/easter-eggs/makeItRain", strings.NewReader(body))
-
+func (account *Account) HQWeekly() (error) {
+	req, _ := http.NewRequest("POST", "https://api-quiz.hype.space/easter-eggs/makeItRain", strings.NewReader("{}"))
 	req.Header.Add("x-hq-client", "Android/1.6.2")
-	req.Header.Add("authorization", "Bearer "+info.AccessToken)
+	req.Header.Add("authorization", "Bearer "+account.AccessToken)
 	req.Header.Add("content-type", "application/json; charset=UTF-8")
-	req.Header.Add("content-length", strconv.Itoa(len(body)))
+	req.Header.Add("content-length", "2")
 	req.Header.Add("user-agent", "okhttp/3.8.0")
 
-	client := http.Client{Transport:transport, Timeout:time.Second * 10}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -152,109 +123,135 @@ func HQWeekly(info *HQInfo, transport *http.Transport) (error) {
 	bytes, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 
-	json.Unmarshal(bytes, &authErr)
-	if authErr.Error != "" {
-		return errors.New(authErr.Error)
-	} else {
-		return nil
+	hqError := HQError{}
+	json.Unmarshal(bytes, &hqError)
+
+	if hqError.Error != "" {
+		return errors.New(hqError.Error)
 	}
+
+	return nil
 }
 
-func Schedule(bearer string, transport *http.Transport) (HQSchedule) {
-	if transport == nil {
-		transport = &http.Transport{}
-	}
-
+func Schedule(bearer string) (*HQSchedule, error) {
 	req, _ := http.NewRequest("GET", "https://api-quiz.hype.space/shows/now?type=hq", nil)
 	req.Header.Set("authorization", bearer)
 
-	client := http.Client{Transport:transport, Timeout:time.Second * 10}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return HQSchedule{}
+		return nil, err
 	}
 
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 
-	schedule := HQSchedule{}
+	var hqError HQError
+	if json.Unmarshal(bytes, &hqError); hqError.Error != "" {
+		return nil, errors.New(hqError.Error)
+	}
+
+	var schedule HQSchedule
 	json.Unmarshal(bytes, &schedule)
 
-	return schedule
-}
-func HQConnect(id int, bearer string, dialer *websocket.Dialer) (*HQSocket, error) {
-	if dialer == nil {
-		dialer = websocket.DefaultDialer
-	}
-	var u = url.URL{Scheme: "wss", Host: "ws-quiz.hype.space", Path: "/ws/" + strconv.Itoa(id)}
-
-	request := http.Header{}
-	request.Add("Authorization", bearer)
-
-	c, _, err := dialer.Dial(u.String(), request)
-	return &HQSocket{c}, err
+	return &schedule, nil
 }
 
-func HQDebug(dialer *websocket.Dialer) (*HQSocket, error) {
-	if dialer == nil {
-		dialer = websocket.DefaultDialer
-	}
+func ConnectHQ(broadcastId int, bearer string) (*Game, error) {
+	headers := http.Header{}
+	headers.Add("authorization", bearer)
 
-	var u = url.URL{Scheme: "wss", Host: "hqecho.herokuapp.com"}
-
-	c, _, err := dialer.Dial(u.String(), nil)
-	return &HQSocket{c}, err
-}
-
-func (ws *HQSocket) SendSocketSubscribe(broadcastID int) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+strconv.Itoa(broadcastID)+`}`))
-}
-func (ws *HQSocket) SendSocketAnswer(broadcastID, questionID, answerID int) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
-}
-func (ws *HQSocket) SendSocketExtraLife(broadcastID, questionID int) error {
-	return ws.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`}`))
-}
-
-func (ws *HQSocket) Read() (message []byte, err error) {
-	_, message, err = ws.ReadMessage()
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered from a crash, fix this lazy boi")
-			message = nil
-			err = errors.New("panic")
-		}
-	}()
-
+	c, _, err := websocket.DefaultDialer.Dial("wss://ws-quiz.hype.space/ws/"+strconv.Itoa(broadcastId), headers)
 	if err != nil {
 		return nil, err
-	} else {
-		return message, nil
 	}
+
+	return &Game{Conn: c}, nil
 }
-func (ws *HQSocket) ParseQuestion(message []byte) (*HQQuestion) {
-	var question *HQQuestion
-	json.Unmarshal(message, &question)
-	if question != nil && len(question.Answers) != 0 {
-		return question
+func DebugHQ() (*Game, error) {
+	c, _, err := websocket.DefaultDialer.Dial("wss://hqecho.herokuapp.com/", nil)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	return &Game{Conn: c}, nil
 }
-func (ws *HQSocket) ParseStats(message []byte) (*HQStats) {
-	var stats *HQStats
-	json.Unmarshal(message, &stats)
-	if stats != nil && stats.ViewerCounts.Playing != 0 {
-		return stats
+
+func (game *Game) SendSubscribe(broadcastID int) error {
+	return game.Conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"subscribe","broadcastId":`+strconv.Itoa(broadcastID)+`}`))
+}
+func (game *Game) SendAnswer(broadcastID, questionID, answerID int) error {
+	return game.Conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"answer","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`,"answerId":`+strconv.Itoa(answerID)+`}`))
+}
+func (game *Game) SendExtraLife(broadcastID, questionID int) error {
+	return game.Conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"useExtraLife","broadcastId":`+strconv.Itoa(broadcastID)+`,"questionId":`+strconv.Itoa(questionID)+`}`))
+}
+
+func (game *Game) ParseBroadcastStats(bytes []byte) (*BroadcastStats) {
+	var broadcastStats BroadcastStats
+	json.Unmarshal(bytes, &broadcastStats)
+
+	if broadcastStats.Type == "broadcastStats" {
+		return &broadcastStats
 	}
 
 	return nil
 }
-func (ws *HQSocket) ParseQuestionSummary(message []byte) (*HQQuestionSummary) {
-	var summary *HQQuestionSummary
-	json.Unmarshal(message, &summary)
-	if summary != nil && summary.QuestionID != 0 {
-		return summary
+func (game *Game) ParseChatMessage(bytes []byte) (*ChatMessage) {
+	var chatMessage ChatMessage
+	json.Unmarshal(bytes, &chatMessage)
+
+	if chatMessage.Type == "interaction" && chatMessage.ItemID == "chat" {
+		return &chatMessage
+	}
+
+	return nil
+}
+func (game *Game) ParseQuestion(bytes []byte) (*Question) {
+	var question Question
+	json.Unmarshal(bytes, &question)
+
+	if question.Type == "question" && len(question.Answers) != 0 {
+		return &question
+	}
+
+	return nil
+}
+func (game *Game) ParseQuestionSummary(bytes []byte) (*QuestionSummary) {
+	var questionSummary QuestionSummary
+	json.Unmarshal(bytes, &questionSummary)
+
+	if questionSummary.Type == "questionSummary" {
+		return &questionSummary
+	}
+
+	return nil
+}
+func (game *Game) ParseQuestionFinished(bytes []byte) (*QuestionFinished) {
+	var questionFinished QuestionFinished
+	json.Unmarshal(bytes, &questionFinished)
+
+	if questionFinished.Type == "questionFinished" {
+		return &questionFinished
+	}
+
+	return nil
+}
+func (game *Game) ParseQuestionClosed(bytes []byte) (*QuestionClosed) {
+	var questionClosed QuestionClosed
+	json.Unmarshal(bytes, &questionClosed)
+
+	if questionClosed.Type == "questionClosed" {
+		return &questionClosed
+	}
+
+	return nil
+}
+func (game *Game) ParseGameStatus(bytes []byte) (*GameStatus) {
+	var gameStatus GameStatus
+	json.Unmarshal(bytes, &gameStatus)
+
+	if gameStatus.Type == "gameStatus" {
+		return &gameStatus
 	}
 
 	return nil
